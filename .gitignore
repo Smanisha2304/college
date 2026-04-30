@@ -10,3 +10,4 @@ target
 # Env files
 .env
 
+application.properties
