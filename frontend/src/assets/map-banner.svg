@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 360" role="img" aria-label="Map banner">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#1d4ed8"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="360" fill="url(#bg)"/>
+  <g opacity="0.35" stroke="#93c5fd" stroke-width="5" fill="none">
+    <path d="M50 300 C180 150 220 150 340 280 S560 340 720 180 S960 80 1140 210"/>
+    <path d="M30 220 C140 90 260 70 410 150 S690 280 900 150 S1050 70 1170 120"/>
+    <path d="M90 330 C250 240 340 250 490 320 S760 340 960 260 S1080 240 1170 300"/>
+  </g>
+  <g fill="#bfdbfe">
+    <circle cx="210" cy="210" r="8"/>
+    <circle cx="470" cy="165" r="8"/>
+    <circle cx="760" cy="250" r="8"/>
+    <circle cx="980" cy="170" r="8"/>
+  </g>
+  <g fill="#f8fafc" font-family="Arial, sans-serif">
+    <text x="50" y="70" font-size="42" font-weight="700">Smart Traffic Navigator</text>
+    <text x="50" y="110" font-size="22">Live routes, congestion alerts, and safer recommendations</text>
+  </g>
+</svg>
