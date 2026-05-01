@@ -35,7 +35,8 @@ export default function Dashboard() {
             }
           );
           setSourceLabel(res.data.squareName || source);
-        } catch {
+        } catch (err) {
+          console.error("Failed to resolve current location name:", err);
           setSourceLabel(source);
         }
       },
@@ -61,7 +62,8 @@ export default function Dashboard() {
         setSuggestions(res.data.suggestions || []);
         setIsSuggestionOpen(true);
         setHighlightedSuggestionIndex(-1);
-      } catch {
+      } catch (err) {
+        console.error("Failed to fetch destination suggestions:", err);
         setSuggestions([]);
       } finally {
         setIsSuggestionsLoading(false);
@@ -99,7 +101,10 @@ export default function Dashboard() {
 // };
   const handleStartNavigation = () => {
     const url = toGoogleDirectionsUrl(routeData?.source, routeData?.destination);
-    if (!url) return;
+    if (!url) {
+      setError("Navigation URL could not be generated for this route.");
+      return;
+    }
     window.open(url, "_blank", "noopener,noreferrer");
   };
 
@@ -159,7 +164,8 @@ export default function Dashboard() {
           setShowNavigationSteps(false);
           setVisibleStepCount(5);
         } catch (err) {
-          setError(err.response?.data?.error || err.response?.data?.msg || "Failed to fetch route");
+          console.error("Failed to analyze route:", err);
+          setError(err.response?.data?.error || err.response?.data?.message || err.response?.data?.msg || "Failed to fetch route");
         } finally {
           setIsLoading(false);
         }
@@ -232,7 +238,11 @@ export default function Dashboard() {
           <p className="muted">
             From: {routeData.sourceSquareName} | To: {routeData.destinationSquareName}
           </p>
-          <RouteCard route={routeData.recommendation} />
+          {routeData.recommendation ? (
+            <RouteCard route={routeData.recommendation} />
+          ) : (
+            <p className="muted">No recommended route available.</p>
+          )}
            {/* <iframe
         width="100%"
         height="400"
@@ -254,10 +264,10 @@ export default function Dashboard() {
               </button>
             )}
           </div>
-          {!!routeData.recommendation?.staticMapImageUrl && (
+          {!!(routeData.staticMapImageUrl || routeData.recommendation?.staticMapImageUrl) && (
             <img
               className="navigation-map"
-              src={routeData.recommendation.staticMapImageUrl}
+              src={routeData.staticMapImageUrl || routeData.recommendation?.staticMapImageUrl}
               alt="Recommended route map"
             />
           )}
