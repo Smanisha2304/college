@@ -46,10 +46,13 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
+import OfflineBanner from "./components/OfflineBanner";
+
 
 function App() {
   return (
     <AuthProvider>
+      <OfflineBanner />
       <HashRouter>
         <Routes>
           <Route path="/" element={<Login />} />

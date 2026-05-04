@@ -38,6 +38,7 @@ import { useState, useContext } from "react";
 import axios from "../api/axios";
 import { AuthContext } from "../context/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
+import PasswordField from "../components/PasswordField";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -72,19 +73,26 @@ export default function Login() {
         <div className="auth-card">
           <h2>Login</h2>
 
-          <input
-            type="email"
-            placeholder="Enter Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-
-          <input
-            type="password"
-            placeholder="Enter Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
+          <div className="auth-field-block">
+            <label className="auth-field-label" htmlFor="login-email">Email</label>
+            <input
+              id="login-email"
+              type="email"
+              placeholder="Enter Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
+          <div className="auth-field-block">
+            <label className="auth-field-label" htmlFor="login-password">Password</label>
+            <PasswordField
+              id="login-password"
+              placeholder="Enter Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="current-password"
+            />
+          </div>
 
           <button className="auth-btn" onClick={handleLogin}>
             Login

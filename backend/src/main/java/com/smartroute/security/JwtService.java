@@ -14,16 +14,21 @@ import java.util.Date;
 
 @Service
 public class JwtService {
+
     private final JwtProperties properties;
     private final SecretKey secretKey;
 
     public JwtService(JwtProperties properties) {
         this.properties = properties;
-        // JWT HMAC needs a sufficiently long secret (>= 256 bits). Fail fast to avoid weak tokens.
-        byte[] keyBytes = properties.getSecret() == null ? new byte[0] : properties.getSecret().getBytes(StandardCharsets.UTF_8);
+
+        byte[] keyBytes = properties.getSecret() == null
+                ? new byte[0]
+                : properties.getSecret().getBytes(StandardCharsets.UTF_8);
+
         if (keyBytes.length < 32) {
             throw new IllegalStateException("smartroute.jwt.secret must be at least 32 bytes for HS256.");
         }
+
         this.secretKey = Keys.hmacShaKeyFor(keyBytes);
     }
 
@@ -38,6 +43,7 @@ public class JwtService {
     private String createToken(String subject, long ttlSeconds) {
         Instant now = Instant.now();
         Instant exp = now.plusSeconds(ttlSeconds);
+
         return Jwts.builder()
                 .setIssuer(properties.getIssuer())
                 .setSubject(subject)
@@ -49,10 +55,13 @@ public class JwtService {
 
     public Claims parseAndValidate(String token) {
         return Jwts.parser()
-                .setSigningKey(secretKey)
+                .verifyWith(secretKey)
                 .build()
-                .parseClaimsJws(token)
-                .getBody();
+                .parseSignedClaims(token)
+                .getPayload();
+    }
+
+    public String extractUsername(String token) {
+        return parseAndValidate(token).getSubject();
     }
 }
-

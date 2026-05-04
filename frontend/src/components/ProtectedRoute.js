@@ -7,6 +7,7 @@ export default function ProtectedRoute({ children }) {
 
   if (loadingUser) return <p>Loading...</p>;
   if (!token) return <Navigate to="/" replace />;
+  // if (token) return <Navigate to="#/dashboard" />;
 
   return children;
 }

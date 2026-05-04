@@ -63,7 +63,8 @@ button:disabled {
 
 .suggestion-dropdown {
   position: absolute;
-  top: calc(100% - 6px);
+ top: 100%;
+margin-top: 6px;
   left: 0;
   right: 0;
   background: #ffffff;
@@ -180,9 +181,15 @@ button:disabled {
 }
 
 .action-buttons {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+  align-items: stretch;
+}
+
+.action-buttons button {
+  width: 100%;
+  margin-top: 0;
 }
 
 .navigation-map {
@@ -257,4 +264,275 @@ button:disabled {
   .pill {
     font-size: 11px;
   }
+}
+
+/* ============ Dashboard layout (grid + destination row) ============ */
+.dashboard-page {
+  box-sizing: border-box;
+}
+
+.dashboard-main-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+  margin-top: 12px;
+}
+.dashboard-col-main,
+.dashboard-col-side {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.location-box,
+.route-form,
+.route-history-panel {
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+
+@media (min-width: 900px) {
+  .dashboard-main-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
+    gap: 20px;
+  }
+}
+
+.dashboard-col-main {
+  min-width: 0;
+}
+
+.dashboard-col-side {
+  min-width: 0;
+}
+
+.route-form-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.route-form-field-grow {
+  flex: 1;
+  min-width: 0; /* VERY IMPORTANT */
+}
+
+.route-form-field-grow input {
+  width: 100%;
+  height: 44px;
+  margin: 0;
+  box-sizing: border-box;
+}
+
+/* BUTTON FIX */
+.route-submit-btn {
+  flex-shrink: 0;   /* prevents shrinking */
+  width: 140px;     /* fixed width */
+  height: 44px;
+  margin: 0;
+  border-radius: 12px;
+}
+
+@media (min-width: 640px) {
+  .route-form-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .route-form-field-grow {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .route-submit-btn {
+    min-width: 128px;
+    white-space: nowrap;
+    margin-top: 0;
+    align-self: end;
+    height: 44px;
+  }
+}
+
+.dashboard-location-repeat {
+  margin-top: 10px;
+}
+
+/* Route history */
+.route-history-panel {
+  background: #f8fbff;
+  border: 1px solid #e1e9ff;
+  border-radius: 12px;
+  padding: 12px 14px;
+  max-height: min(420px, 55vh);
+  display: flex;
+  flex-direction: column;
+  min-height: 120px;
+}
+
+.route-history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.route-history-title {
+  margin: 0;
+  font-size: 15px;
+  color: #1e3a8a;
+}
+
+.route-history-status {
+  font-size: 12px;
+}
+
+.route-history-load-btn {
+  margin-top: 0;
+  padding: 6px 10px;
+  font-size: 12px;
+  border-radius: 8px;
+}
+
+.route-history-error {
+  margin: 0 0 8px;
+  font-size: 13px;
+}
+
+.route-history-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.route-history-empty {
+  padding: 10px 4px;
+  font-size: 13px;
+}
+
+.route-history-item {
+  width: 100%;
+  text-align: left;
+  margin: 0 0 8px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #dbe5ff;
+  background: #ffffff;
+  color: #1e293b;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  box-sizing: border-box;
+}
+
+.route-history-item:hover {
+  border-color: #93b0ff;
+  background: #f0f5ff;
+}
+
+.route-history-dest {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.route-history-meta,
+.route-history-time {
+  font-size: 12px;
+}
+
+/* Enhanced navigation steps */
+.nav-step-enhanced {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.nav-step-icon {
+  flex-shrink: 0;
+  width: 56px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 6px;
+  border-radius: 10px;
+  background: #eaf1ff;
+  border: 1px solid #d2e0ff;
+}
+
+.nav-step-arrow {
+  font-size: 22px;
+  line-height: 1;
+  color: #1d4ed8;
+}
+
+.nav-step-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #1e3a8a;
+  margin-top: 4px;
+}
+
+.nav-step-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.nav-step-instruction {
+  margin: 0 0 4px;
+}
+
+.route-map-section {
+  margin-top: 14px;
+}
+
+.section-subtitle {
+  margin: 0 0 8px;
+  font-size: 15px;
+  color: #1e3a8a;
+}
+
+.route-leaflet-map {
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+  border: 1px solid #dbe5ff;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.route-map-wrap {
+  width: 100%;
+}
+
+.sr-leaflet-marker {
+  background: transparent;
+  border: none;
+}
+
+.sr-leaflet-marker-inner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  color: #fff;
+  font-weight: 800;
+  font-size: 12px;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
+/* Offline banner */
+.offline-banner {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  padding: 10px 16px;
+  background: #b45309;
+  color: #fffbeb;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 600;
 }

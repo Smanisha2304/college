@@ -1,6 +1,7 @@
 import { useState } from "react";
 import axios from "../api/axios";
 import { Link, useNavigate } from "react-router-dom";
+import PasswordField from "../components/PasswordField";
 
 export default function Signup() {
   const [form, setForm] = useState({
@@ -32,40 +33,56 @@ export default function Signup() {
         <p className="auth-tagline">Create your account 🚀</p>
 
         <div className="auth-card">
-          <input
-            placeholder="Full Name"
-            onChange={(e) =>
-              setForm({ ...form, fullName: e.target.value })
-            }
-          />
-          <input
-            placeholder="Mobile Number"
-            onChange={(e) =>
-              setForm({ ...form, mobileNumber: e.target.value })
-            }
-          />
-
-          <input
-            placeholder="Email"
-            onChange={(e) =>
-              setForm({ ...form, email: e.target.value })
-            }
-          />
-
-          <input
-            type="password"
-            placeholder="Password"
-            onChange={(e) =>
-              setForm({ ...form, password: e.target.value })
-            }
-          />
-          <input
-            type="password"
-            placeholder="Confirm Password"
-            onChange={(e) =>
-              setForm({ ...form, confirmPassword: e.target.value })
-            }
-          />
+          <div className="auth-field-block">
+            <label className="auth-field-label" htmlFor="signup-fullname">Full Name</label>
+            <input
+              id="signup-fullname"
+              placeholder="Full Name"
+              onChange={(e) =>
+                setForm({ ...form, fullName: e.target.value })
+              }
+            />
+          </div>
+          <div className="auth-field-block">
+            <label className="auth-field-label" htmlFor="signup-mobile">Mobile Number</label>
+            <input
+              id="signup-mobile"
+              placeholder="Mobile Number"
+              onChange={(e) =>
+                setForm({ ...form, mobileNumber: e.target.value })
+              }
+            />
+          </div>
+          <div className="auth-field-block">
+            <label className="auth-field-label" htmlFor="signup-email">Email</label>
+            <input
+              id="signup-email"
+              placeholder="Email"
+              onChange={(e) =>
+                setForm({ ...form, email: e.target.value })
+              }
+            />
+          </div>
+          <div className="auth-field-block">
+            <label className="auth-field-label" htmlFor="signup-password">Password</label>
+            <PasswordField
+              id="signup-password"
+              placeholder="Password"
+              value={form.password}
+              onChange={(e) => setForm({ ...form, password: e.target.value })}
+              autoComplete="new-password"
+            />
+          </div>
+          <div className="auth-field-block">
+            <label className="auth-field-label" htmlFor="signup-confirm-password">Confirm Password</label>
+            <PasswordField
+              id="signup-confirm-password"
+              placeholder="Confirm Password"
+              value={form.confirmPassword}
+              onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
+              autoComplete="new-password"
+            />
+          </div>
 
           <button className="auth-btn" onClick={handleSignup}>
             Signup

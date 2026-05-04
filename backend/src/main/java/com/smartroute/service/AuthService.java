@@ -80,24 +80,51 @@ public class AuthService {
         return new AuthTokens(access, refresh, userId);
     }
 
+    // @Transactional
+    // public void forgotPassword(ForgotPasswordRequest req) {
+    //     // Avoid account enumeration: always succeed.
+    //     Optional<User> maybeUser = userRepository.findByEmail(req.getEmail().trim().toLowerCase());
+    //     if (maybeUser.isEmpty()) return;
+
+    //     User user = maybeUser.get();
+    //     PasswordResetToken token = new PasswordResetToken();
+    //     token.setUser(user);
+    //     token.setToken(UUID.randomUUID().toString().replace("-", ""));
+    //     token.setExpiresAt(Instant.now().plusSeconds(30 * 60L));
+    //     token.setUsedAt(null);
+    //     tokenRepository.save(token);
+
+    //     String resetLink = frontendResetPasswordBaseUrl + "?token=" + token.getToken();
+    //     emailService.sendPasswordResetEmail(user.getEmail(), resetLink);
+    // }
+
     @Transactional
-    public void forgotPassword(ForgotPasswordRequest req) {
-        // Avoid account enumeration: always succeed.
-        Optional<User> maybeUser = userRepository.findByEmail(req.getEmail().trim().toLowerCase());
-        if (maybeUser.isEmpty()) return;
+public void forgotPassword(ForgotPasswordRequest req) {
+    Optional<User> maybeUser = userRepository.findByEmail(
+        req.getEmail().trim().toLowerCase()
+    );
 
-        User user = maybeUser.get();
-        PasswordResetToken token = new PasswordResetToken();
-        token.setUser(user);
-        token.setToken(UUID.randomUUID().toString().replace("-", ""));
-        token.setExpiresAt(Instant.now().plusSeconds(30 * 60L));
-        token.setUsedAt(null);
-        tokenRepository.save(token);
+    if (maybeUser.isEmpty()) return;
 
+    User user = maybeUser.get();
+
+    PasswordResetToken token = new PasswordResetToken();
+    token.setUser(user);
+    token.setToken(UUID.randomUUID().toString().replace("-", ""));
+    token.setExpiresAt(Instant.now().plusSeconds(30 * 60L));
+    token.setUsedAt(null);
+    tokenRepository.save(token);
+
+    try {
         String resetLink = frontendResetPasswordBaseUrl + "?token=" + token.getToken();
-        emailService.sendPasswordResetEmail(user.getEmail(), resetLink);
-    }
 
+        emailService.sendPasswordResetEmail(user.getEmail(), resetLink);
+
+    } catch (Exception e) {
+        e.printStackTrace();
+        // don't crash API
+    }
+}
     @Transactional
     public AuthTokens resetPassword(ResetPasswordRequest req) {
         PasswordResetToken token = tokenRepository.findByToken(req.getToken())
@@ -136,6 +163,10 @@ public class AuthService {
                 .orElseThrow(() -> new IllegalArgumentException("User not found."));
 
         return new UserMeResponse(user.getId(), user.getFullName(), user.getEmail(), user.getMobileNumber());
+    }
+
+    public String parseUserIdFromToken(String token) {
+        return jwtService.extractUsername(token);
     }
 }
 
