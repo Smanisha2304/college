@@ -1,4 +1,4 @@
-export default function RouteHistoryPanel({ items, loading, error, hasLoaded, onRefresh, onPick }) {
+export default function RouteHistoryPanel({ items, loading, error, hasLoaded, onRefresh, onPick, onRequestDelete }) {
   return (
     <aside className="route-history-panel" aria-label="Recent searches">
       <div className="route-history-header">
@@ -21,19 +21,30 @@ export default function RouteHistoryPanel({ items, loading, error, hasLoaded, on
         )}
         {items.map((row) => (
           <li key={row.id}>
-            <button
-              type="button"
-              className="route-history-item"
-              onClick={() => onPick(row.destination)}
-            >
-              <span className="route-history-dest">{row.destination}</span>
-              {row.sourceLabel && (
-                <span className="route-history-meta muted">From {row.sourceLabel}</span>
-              )}
-              <span className="route-history-time muted">
-                {new Date(row.createdAt).toLocaleString()}
-              </span>
-            </button>
+            <div className="route-history-item">
+              <button
+                type="button"
+                className="route-history-pick-btn"
+                onClick={() => onPick(row.destination)}
+              >
+                <span className="route-history-dest">{row.destination}</span>
+                {row.sourceLabel && (
+                  <span className="route-history-meta muted">From {row.sourceLabel}</span>
+                )}
+                <span className="route-history-time muted">
+                  {new Date(row.createdAt).toLocaleString()}
+                </span>
+              </button>
+              <button
+                type="button"
+                className="route-history-delete-btn"
+                onClick={() => onRequestDelete(row.historyId)}
+                disabled={!row.historyId}
+                title={!row.historyId ? "Only server-saved history can be requested for delete. Click Get Route to save it." : ""}
+              >
+                Request Delete
+              </button>
+            </div>
           </li>
         ))}
       </ul>

@@ -138,6 +138,20 @@ body {
   background: #16a34a;
 }
 
+.google-auth-btn {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  text-align: center;
+  margin-top: 6px;
+  padding: 11px 12px;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #1f2937;
+  font-weight: 600;
+  text-decoration: none;
+}
+
 /* LINKS */
 .auth-links {
   margin-top: 15px;

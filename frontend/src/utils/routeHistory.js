@@ -56,20 +56,27 @@ export function mergeHistory(remote, local) {
   const seen = new Set();
   const merged = [];
 
-  const push = (row) => {
+  const push = (row, source) => {
     if (!row?.destination) return;
     const key = `${row.destination}|${row.createdAt || ""}|${row.sourceLabel || ""}`;
     if (seen.has(key)) return;
     seen.add(key);
+
+    const remoteId = source === "remote" && typeof row.id === "number" ? row.id : null;
+    const reactKey = remoteId ? `remote-${remoteId}` : `local-${key}`;
+
     merged.push({
-      id: row.id || key,
+      id: reactKey,
+      historyId: remoteId,
       destination: row.destination,
       sourceLabel: row.sourceLabel || "",
       createdAt: row.createdAt || new Date().toISOString(),
+      source,
     });
   };
 
-  [...remote, ...local].forEach(push);
+  (remote || []).forEach((row) => push(row, "remote"));
+  (local || []).forEach((row) => push(row, "local"));
 
   merged.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   return merged;

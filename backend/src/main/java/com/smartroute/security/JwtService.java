@@ -32,21 +32,22 @@ public class JwtService {
         this.secretKey = Keys.hmacShaKeyFor(keyBytes);
     }
 
-    public String createAccessToken(String subjectUserId) {
-        return createToken(subjectUserId, properties.getAccessTokenTtlSeconds());
+    public String createAccessToken(String subjectUserId, String role) {
+        return createToken(subjectUserId, role, properties.getAccessTokenTtlSeconds());
     }
 
-    public String createRefreshToken(String subjectUserId) {
-        return createToken(subjectUserId, properties.getRefreshTokenTtlSeconds());
+    public String createRefreshToken(String subjectUserId, String role) {
+        return createToken(subjectUserId, role, properties.getRefreshTokenTtlSeconds());
     }
 
-    private String createToken(String subject, long ttlSeconds) {
+    private String createToken(String subject, String role, long ttlSeconds) {
         Instant now = Instant.now();
         Instant exp = now.plusSeconds(ttlSeconds);
 
         return Jwts.builder()
                 .setIssuer(properties.getIssuer())
                 .setSubject(subject)
+                .claim("role", role)
                 .setIssuedAt(Date.from(now))
                 .setExpiration(Date.from(exp))
                 .signWith(secretKey, SignatureAlgorithm.HS256)
@@ -63,5 +64,10 @@ public class JwtService {
 
     public String extractUsername(String token) {
         return parseAndValidate(token).getSubject();
+    }
+
+    public String extractRole(String token) {
+        Object role = parseAndValidate(token).get("role");
+        return role == null ? "USER" : role.toString();
     }
 }

@@ -2,6 +2,7 @@ package com.smartroute.service;
 
 import com.smartroute.api.auth.dto.*;
 import com.smartroute.entity.PasswordResetToken;
+import com.smartroute.entity.Role;
 import com.smartroute.entity.User;
 import com.smartroute.repository.PasswordResetTokenRepository;
 import com.smartroute.repository.UserRepository;
@@ -10,13 +11,17 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 @Service
 public class AuthService {
+    private static final Logger log = LoggerFactory.getLogger(AuthService.class);
 
     public record AuthTokens(String accessToken, String refreshToken, String userId) {}
 
@@ -62,6 +67,7 @@ public class AuthService {
         user.setEmail(req.getEmail().trim().toLowerCase());
         user.setMobileNumber(req.getMobileNumber().trim());
         user.setPasswordHash(passwordEncoder.encode(req.getPassword()));
+        user.setRole(Role.USER);
         userRepository.save(user);
     }
 
@@ -73,10 +79,9 @@ public class AuthService {
             throw new IllegalArgumentException("Invalid email or password.");
         }
 
-        // Both access + refresh currently use the same secret and subject claim.
         String userId = String.valueOf(user.getId());
-        String access = jwtService.createAccessToken(userId);
-        String refresh = jwtService.createRefreshToken(userId);
+        String access = jwtService.createAccessToken(userId, user.getRole().name());
+        String refresh = jwtService.createRefreshToken(userId, user.getRole().name());
         return new AuthTokens(access, refresh, userId);
     }
 
@@ -99,32 +104,27 @@ public class AuthService {
     // }
 
     @Transactional
-public void forgotPassword(ForgotPasswordRequest req) {
-    Optional<User> maybeUser = userRepository.findByEmail(
-        req.getEmail().trim().toLowerCase()
-    );
+    public void forgotPassword(ForgotPasswordRequest req) {
+        Optional<User> maybeUser = userRepository.findByEmail(req.getEmail().trim().toLowerCase());
+        if (maybeUser.isEmpty()) return;
 
-    if (maybeUser.isEmpty()) return;
+        User user = maybeUser.get();
+        PasswordResetToken token = new PasswordResetToken();
+        token.setUser(user);
+        token.setToken(UUID.randomUUID().toString().replace("-", ""));
+        token.setExpiresAt(Instant.now().plusSeconds(30 * 60L));
+        token.setUsedAt(null);
+        tokenRepository.save(token);
 
-    User user = maybeUser.get();
-
-    PasswordResetToken token = new PasswordResetToken();
-    token.setUser(user);
-    token.setToken(UUID.randomUUID().toString().replace("-", ""));
-    token.setExpiresAt(Instant.now().plusSeconds(30 * 60L));
-    token.setUsedAt(null);
-    tokenRepository.save(token);
-
-    try {
         String resetLink = frontendResetPasswordBaseUrl + "?token=" + token.getToken();
-
-        emailService.sendPasswordResetEmail(user.getEmail(), resetLink);
-
-    } catch (Exception e) {
-        e.printStackTrace();
-        // don't crash API
+        try {
+            emailService.sendPasswordResetEmail(user.getEmail(), resetLink);
+        } catch (Exception e) {
+            // Do not fail the API if SMTP is misconfigured.
+             log.error("❌ Email failed: ", e);
+    log.warn("Reset link (dev): {}", resetLink);
+        }
     }
-}
     @Transactional
     public AuthTokens resetPassword(ResetPasswordRequest req) {
         PasswordResetToken token = tokenRepository.findByToken(req.getToken())
@@ -145,8 +145,8 @@ public void forgotPassword(ForgotPasswordRequest req) {
         tokenRepository.save(token);
 
         String userId = String.valueOf(user.getId());
-        String access = jwtService.createAccessToken(userId);
-        String refresh = jwtService.createRefreshToken(userId);
+        String access = jwtService.createAccessToken(userId, user.getRole().name());
+        String refresh = jwtService.createRefreshToken(userId, user.getRole().name());
         return new AuthTokens(access, refresh, userId);
     }
 
@@ -162,11 +162,46 @@ public void forgotPassword(ForgotPasswordRequest req) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("User not found."));
 
-        return new UserMeResponse(user.getId(), user.getFullName(), user.getEmail(), user.getMobileNumber());
+        return new UserMeResponse(user.getId(), user.getFullName(), user.getEmail(), user.getMobileNumber(), user.getRole().name());
     }
 
     public String parseUserIdFromToken(String token) {
         return jwtService.extractUsername(token);
+    }
+
+    public String parseRoleFromToken(String token) {
+        return jwtService.extractRole(token);
+    }
+
+    @Transactional
+    public AuthTokens loginOrSignupGoogleUser(String email, String fullName) {
+        String normalizedEmail = email.trim().toLowerCase();
+        User user = userRepository.findByEmail(normalizedEmail).orElseGet(() -> {
+            User created = new User();
+            created.setEmail(normalizedEmail);
+            created.setFullName((fullName == null || fullName.isBlank()) ? normalizedEmail : fullName.trim());
+            created.setMobileNumber("N/A");
+            created.setPasswordHash(passwordEncoder.encode(UUID.randomUUID().toString()));
+            created.setRole(Role.USER);
+            return userRepository.save(created);
+        });
+
+        String userId = String.valueOf(user.getId());
+        String access = jwtService.createAccessToken(userId, user.getRole().name());
+        String refresh = jwtService.createRefreshToken(userId, user.getRole().name());
+        return new AuthTokens(access, refresh, userId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<UserMeResponse> listUsers() {
+        return userRepository.findAll().stream()
+                .map(user -> new UserMeResponse(
+                        user.getId(),
+                        user.getFullName(),
+                        user.getEmail(),
+                        user.getMobileNumber(),
+                        user.getRole().name()))
+                .toList();
     }
 }
 

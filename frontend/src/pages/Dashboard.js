@@ -208,6 +208,19 @@ export default function Dashboard() {
     setIsSuggestionOpen(false);
   };
 
+  const handleRequestDelete = async (historyId) => {
+    if (!historyId) {
+      setHistoryError("This entry is local-only. Generate the route again so it is saved on the server, then request delete.");
+      return;
+    }
+    try {
+      await axios.post("/api/history/delete-request", { historyId });
+      await refreshHistory();
+    } catch (err) {
+      setHistoryError(err.response?.data?.message || "Could not create delete request.");
+    }
+  };
+
   const canShowMap =
     routeData?.source &&
     routeData?.destination &&
@@ -295,6 +308,7 @@ export default function Dashboard() {
             hasLoaded={hasHistoryLoaded}
             onRefresh={refreshHistory}
             onPick={handleHistoryPick}
+            onRequestDelete={handleRequestDelete}
           />
         </div>
       </div>

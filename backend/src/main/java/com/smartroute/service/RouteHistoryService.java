@@ -1,80 +1,95 @@
 package com.smartroute.service;
 
+import com.smartroute.api.auth.dto.RouteHistoryItemResponse;
 import com.smartroute.api.auth.dto.RouteHistoryRequest;
+import com.smartroute.entity.RouteHistory;
+import com.smartroute.entity.User;
+import com.smartroute.repository.RouteHistoryRepository;
+import com.smartroute.repository.UserRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
 
 @Service
 public class RouteHistoryService {
 
-    public record RouteHistoryItem(Long id, String destination, String sourceLabel, Instant createdAt) {}
+    private final RouteHistoryRepository routeHistoryRepository;
+    private final UserRepository userRepository;
 
-    private final AtomicLong idGenerator = new AtomicLong(1);
-    private final Map<String, List<RouteHistoryItem>> historyByUser = new ConcurrentHashMap<>();
-
-    public List<RouteHistoryItem> getUserHistory(String userId) {
-        if (userId == null || userId.isBlank()) {
-            return Collections.emptyList();
-        }
-        List<RouteHistoryItem> list = historyByUser.getOrDefault(userId, Collections.emptyList());
-        List<RouteHistoryItem> result = new ArrayList<>(list);
-        result.sort(Comparator.comparing(RouteHistoryItem::createdAt).reversed());
-        return result;
+    public RouteHistoryService(RouteHistoryRepository routeHistoryRepository, UserRepository userRepository) {
+        this.routeHistoryRepository = routeHistoryRepository;
+        this.userRepository = userRepository;
     }
 
-    public RouteHistoryItem save(RouteHistoryRequest req, String userId) {
-        if (userId == null || userId.isBlank()) {
+    @Transactional(readOnly = true)
+    public List<RouteHistoryItemResponse> getUserHistory(String userId) {
+        Long id = parseUserId(userId);
+        if (id == null) {
+            return Collections.emptyList();
+        }
+        return routeHistoryRepository.findByUserIdOrderByCreatedAtDesc(id).stream().map(this::toResponse).toList();
+    }
+
+    @Transactional
+    public RouteHistoryItemResponse save(RouteHistoryRequest req, String userId) {
+        Long id = parseUserId(userId);
+        if (id == null) {
             throw new IllegalArgumentException("Invalid user.");
         }
-
         String destination = req == null ? null : req.getDestination();
         if (destination == null || destination.trim().isEmpty()) {
             throw new IllegalArgumentException("Destination is required.");
         }
+        User user = userRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("User not found."));
+        RouteHistory history = new RouteHistory();
+        history.setUser(user);
+        history.setDestination(destination.trim());
+        history.setSourceLabel(req.getSourceLabel() == null ? "" : req.getSourceLabel().trim());
+        return toResponse(routeHistoryRepository.save(history));
+    }
 
-        RouteHistoryItem item = new RouteHistoryItem(
-                idGenerator.getAndIncrement(),
-                destination.trim(),
-                req.getSourceLabel() == null ? "" : req.getSourceLabel().trim(),
-                Instant.now()
-        );
-
-        historyByUser.compute(userId, (key, existing) -> {
-            List<RouteHistoryItem> next = existing == null ? new ArrayList<>() : new ArrayList<>(existing);
-            next.add(item);
-            if (next.size() > 100) {
-                next = new ArrayList<>(next.subList(next.size() - 100, next.size()));
-            }
-            return next;
-        });
-
-        return item;
+    @Transactional(readOnly = true)
+    public List<RouteHistoryItemResponse> getUserHistoryByAdmin(Long userId) {
+        return routeHistoryRepository.findByUserIdOrderByCreatedAtDesc(userId).stream().map(this::toResponse).toList();
     }
 
     public void delete(Long id, String userId) {
-        if (id == null || userId == null || userId.isBlank()) {
+        Long parsedId = parseUserId(userId);
+        if (id == null || parsedId == null) {
             return;
         }
-
-        historyByUser.computeIfPresent(userId, (key, existing) -> {
-            List<RouteHistoryItem> next = new ArrayList<>(existing);
-            next.removeIf(item -> id.equals(item.id()));
-            return next;
-        });
+        routeHistoryRepository.findByIdAndUserId(id, parsedId).ifPresent(routeHistoryRepository::delete);
     }
 
     public void clear(String userId) {
-        if (userId == null || userId.isBlank()) {
+        Long parsedId = parseUserId(userId);
+        if (parsedId == null) {
             return;
         }
-        historyByUser.remove(userId);
+        routeHistoryRepository.findByUserIdOrderByCreatedAtDesc(parsedId).forEach(routeHistoryRepository::delete);
+    }
+
+    @Transactional
+    public void deleteById(Long id) {
+        routeHistoryRepository.deleteById(id);
+    }
+
+    private Long parseUserId(String userId) {
+        try {
+            return Long.parseLong(userId);
+        } catch (Exception ex) {
+            return null;
+        }
+    }
+
+    private RouteHistoryItemResponse toResponse(RouteHistory history) {
+        return new RouteHistoryItemResponse(
+                history.getId(),
+                history.getDestination(),
+                history.getSourceLabel(),
+                history.getCreatedAt()
+        );
     }
 }

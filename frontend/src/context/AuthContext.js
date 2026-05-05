@@ -45,13 +45,15 @@ export const AuthProvider = ({ children }) => {
       }
 
       try {
-        const res = await axios.get("/api/auth/me", {
-  headers: {
-    Authorization: `Bearer ${token}`
-  }
-});
-        setUser(res.data);
-        localStorage.setItem("user", JSON.stringify(res.data));
+        const res = await axios.get("/api/auth/validate", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.data?.valid || !res.data?.user) {
+          logout();
+          return;
+        }
+        setUser(res.data.user);
+        localStorage.setItem("user", JSON.stringify(res.data.user));
       } catch {
         logout();
       } finally {

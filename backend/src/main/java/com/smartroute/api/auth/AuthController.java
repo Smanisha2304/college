@@ -1,10 +1,12 @@
 package com.smartroute.api.auth;
 
 import com.smartroute.api.auth.dto.AuthLoginResponse;
+import com.smartroute.api.auth.dto.AuthValidateResponse;
 import com.smartroute.api.auth.dto.ForgotPasswordRequest;
 import com.smartroute.api.auth.dto.LoginRequest;
 import com.smartroute.api.auth.dto.ResetPasswordRequest;
 import com.smartroute.api.auth.dto.SignupRequest;
+import com.smartroute.api.auth.dto.UserMeResponse;
 import com.smartroute.service.AuthService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -21,7 +23,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping({"/api/auth", "/auth"})
 public class AuthController {
 
     private static final String ACCESS_COOKIE = "SR_ACCESS_TOKEN";
@@ -61,12 +63,10 @@ public class AuthController {
 
     @PostMapping("/forgot-password")
     public ResponseEntity<?> forgotPassword(@RequestBody ForgotPasswordRequest req) {
-        try {
-            authService.forgotPassword(req);
-            return ResponseEntity.ok("If the email exists, a reset link has been sent.");
-        } catch (Exception e) {
-            return ResponseEntity.status(500).body("Error processing request");
-        }
+        // Always return 200 to avoid account enumeration and to keep UX stable
+        // even if SMTP is not configured locally.
+        authService.forgotPassword(req);
+        return ResponseEntity.ok("If the email exists, a reset link has been sent.");
     }
 
     @PostMapping("/reset-password")
@@ -98,6 +98,34 @@ public class AuthController {
         } catch (Exception e) {
             return ResponseEntity.status(401).body("Invalid token");
         }
+    }
+
+    @GetMapping("/validate")
+    public ResponseEntity<?> validate(Authentication authentication, HttpServletRequest request) {
+        try {
+            UserMeResponse user = null;
+            if (authentication != null && authentication.getName() != null && !authentication.getName().isBlank()) {
+                user = authService.me(authentication.getName());
+            } else {
+                String authHeader = request.getHeader("Authorization");
+                if (authHeader == null || authHeader.isBlank() || !authHeader.startsWith(BEARER_PREFIX)) {
+                    return ResponseEntity.status(401).body(new AuthValidateResponse(false, null));
+                }
+                String token = authHeader.substring(BEARER_PREFIX.length()).trim();
+                if (token.isEmpty()) {
+                    return ResponseEntity.status(401).body(new AuthValidateResponse(false, null));
+                }
+                user = authService.me(authService.parseUserIdFromToken(token));
+            }
+            return ResponseEntity.ok(new AuthValidateResponse(true, user));
+        } catch (Exception ex) {
+            return ResponseEntity.status(401).body(new AuthValidateResponse(false, null));
+        }
+    }
+
+    @GetMapping("/google")
+    public void googleLogin(HttpServletResponse response) throws java.io.IOException {
+        response.sendRedirect("/oauth2/authorization/google");
     }
 
     @PostMapping("/logout")
