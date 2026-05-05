@@ -20,7 +20,7 @@ export default function Signup() {
     try {
       await axios.post("/api/auth/signup", form);
       alert("Signup successful. Please login.");
-      navigate("/");
+      navigate("/login");
     } catch (err) {
       setError(err.response?.data?.message || "Signup failed");
     }
@@ -91,7 +91,7 @@ export default function Signup() {
           {error && <p className="error">{error}</p>}
 
           <div className="auth-links">
-            <Link to="/">Back to Login</Link>
+            <Link to="/login">Back to Login</Link>
           </div>
         </div>
       </div>

@@ -17,7 +17,7 @@ export default function OAuthSuccess() {
 
     // ❌ No token → go back to login
     if (!token) {
-      navigate("/", { replace: true });
+      navigate("/login", { replace: true });
       return;
     }
 
@@ -40,7 +40,7 @@ export default function OAuthSuccess() {
 
     } catch (error) {
       console.error("OAuth error:", error);
-      navigate("/", { replace: true });
+      navigate("/login", { replace: true });
     }
 
   }, [token, login, navigate]);

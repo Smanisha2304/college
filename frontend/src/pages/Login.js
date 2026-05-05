@@ -1,8 +1,17 @@
 import { useState, useContext, useEffect } from "react";
 import axios from "../api/axios";
 import { AuthContext } from "../context/AuthContext";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import PasswordField from "../components/PasswordField";
+
+const AUTH_PAGES = new Set(["/", "/login", "/signup", "/forgot-password", "/reset-password", "/oauth-success"]);
+
+function resolvePostLoginPath(role, attemptedPath) {
+  if (attemptedPath && !AUTH_PAGES.has(attemptedPath)) {
+    return attemptedPath;
+  }
+  return role === "ADMIN" ? "/admin" : "/dashboard";
+}
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -11,20 +20,22 @@ export default function Login() {
 
   const { token, user, loadingUser, login } = useContext(AuthContext);
   const navigate = useNavigate();
+  const location = useLocation();
+  const attemptedPath = location.state?.from?.pathname;
 
   useEffect(() => {
     if (loadingUser) return;
     if (token && user) {
-      navigate(user.role === "ADMIN" ? "/admin" : "/dashboard", { replace: true });
+      navigate(resolvePostLoginPath(user.role, attemptedPath), { replace: true });
     }
-  }, [token, user, loadingUser, navigate]);
+  }, [token, user, loadingUser, navigate, attemptedPath]);
 
   const handleLogin = async () => {
     setError("");
     try {
       const res = await axios.post("/api/auth/login", { email, password });
       login(res.data);
-      navigate(res.data?.user?.role === "ADMIN" ? "/admin" : "/dashboard");
+      navigate(resolvePostLoginPath(res.data?.user?.role, attemptedPath), { replace: true });
     } catch (err) {
       setError(err.response?.data?.message || "Login failed");
     }

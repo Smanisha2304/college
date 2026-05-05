@@ -69,7 +69,7 @@ export default function AdminDashboard() {
           className="logout-btn"
           onClick={() => {
             logout();
-            navigate("/", { replace: true });
+            navigate("/login", { replace: true });
           }}
         >
           Logout

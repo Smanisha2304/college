@@ -23,7 +23,7 @@ export default function ResetPassword() {
 
       setMessage(res.data.message || "Password reset successful");
 
-      setTimeout(() => navigate("/"), 1500);
+      setTimeout(() => navigate("/login"), 1500);
     } catch (err) {
       setError(err.response?.data?.message || "Failed to reset password");
     }
