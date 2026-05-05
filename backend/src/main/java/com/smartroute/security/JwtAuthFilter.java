@@ -17,8 +17,8 @@ import java.util.List;
 
 @Component
 public class JwtAuthFilter extends OncePerRequestFilter {
-    private static final String ACCESS_COOKIE = "SR_ACCESS_TOKEN";
 
+    private static final String ACCESS_COOKIE = "SR_ACCESS_TOKEN";
     private final JwtService jwtService;
 
     public JwtAuthFilter(JwtService jwtService) {
@@ -26,9 +26,20 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+    protected void doFilterInternal(HttpServletRequest request,
+                                    HttpServletResponse response,
+                                    FilterChain filterChain)
             throws ServletException, IOException {
+
+        // ✅ SKIP OAuth endpoints
+        String path = request.getRequestURI();
+        if (path.startsWith("/oauth2") || path.startsWith("/login")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         String token = readBearerToken(request);
+
         if (token == null) {
             token = readCookie(request, ACCESS_COOKIE);
         }
@@ -36,21 +47,26 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         if (token != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             try {
                 var claims = jwtService.parseAndValidate(token);
+
                 String userId = claims.getSubject();
                 String role = claims.get("role", String.class);
+
                 if (role == null || role.isBlank()) {
                     role = "USER";
                 }
+
                 String authority = role.startsWith("ROLE_") ? role : "ROLE_" + role;
+
                 var auth = new UsernamePasswordAuthenticationToken(
                         userId,
                         null,
                         List.of(new SimpleGrantedAuthority(authority))
                 );
+
                 auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(auth);
-            } catch (Exception ignored) {
-                // If token is invalid/expired, just leave request unauthenticated.
+
+            } catch (Exception e) {
                 SecurityContextHolder.clearContext();
             }
         }
@@ -58,21 +74,21 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
-    private static String readBearerToken(HttpServletRequest request) {
-        String authHeader = request.getHeader("Authorization");
-        if (authHeader == null || authHeader.isBlank()) return null;
-        if (!authHeader.startsWith("Bearer ")) return null;
-        String bearerToken = authHeader.substring(7).trim();
-        return bearerToken.isEmpty() ? null : bearerToken;
+    private String readBearerToken(HttpServletRequest request) {
+        String header = request.getHeader("Authorization");
+        if (header == null || !header.startsWith("Bearer ")) return null;
+        return header.substring(7).trim();
     }
 
-    private static String readCookie(HttpServletRequest request, String name) {
+    private String readCookie(HttpServletRequest request, String name) {
         Cookie[] cookies = request.getCookies();
         if (cookies == null) return null;
+
         for (Cookie c : cookies) {
-            if (name.equals(c.getName())) return c.getValue();
+            if (name.equals(c.getName())) {
+                return c.getValue();
+            }
         }
         return null;
     }
 }
-

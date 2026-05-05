@@ -1,40 +1,53 @@
-import { useContext, useEffect, useMemo } from "react";
+import { useContext, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import axios from "../api/axios";
 import { AuthContext } from "../context/AuthContext";
 
 export default function OAuthSuccess() {
   const { login } = useContext(AuthContext);
   const navigate = useNavigate();
   const location = useLocation();
+  const hasRun = useRef(false);
 
-  const token = useMemo(() => {
-    const params = new URLSearchParams(location.search);
-    return params.get("token");
-  }, [location.search]);
+  // ✅ Get token from URL
+  const token = new URLSearchParams(location.search).get("token");
 
   useEffect(() => {
-    const complete = async () => {
-      if (!token) {
-        navigate("/", { replace: true });
-        return;
+    if (hasRun.current) return;
+    hasRun.current = true;
+
+    // ❌ No token → go back to login
+    if (!token) {
+      navigate("/", { replace: true });
+      return;
+    }
+
+    try {
+      // ✅ Decode JWT token
+      const payload = JSON.parse(atob(token.split(".")[1]));
+
+      // ✅ Save auth state
+      login({
+        token,
+        user: payload,
+      });
+
+      // ✅ Redirect to dashboard or admin
+      if (payload.role === "ADMIN") {
+        navigate("/admin", { replace: true });
+      } else {
+        navigate("/dashboard", { replace: true });
       }
-      try {
-        const validate = await axios.get("/api/auth/validate", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!validate.data?.valid || !validate.data?.user) {
-          navigate("/", { replace: true });
-          return;
-        }
-        login({ token, user: validate.data.user });
-        navigate(validate.data.user.role === "ADMIN" ? "/admin" : "/dashboard", { replace: true });
-      } catch {
-        navigate("/", { replace: true });
-      }
-    };
-    complete();
+
+    } catch (error) {
+      console.error("OAuth error:", error);
+      navigate("/", { replace: true });
+    }
+
   }, [token, login, navigate]);
 
-  return <p className="page">Completing Google sign-in...</p>;
+  return (
+    <div className="page">
+      <p>Logging you in...</p>
+    </div>
+  );
 }

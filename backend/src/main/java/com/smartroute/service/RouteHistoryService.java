@@ -29,7 +29,7 @@ public class RouteHistoryService {
         if (id == null) {
             return Collections.emptyList();
         }
-        return routeHistoryRepository.findByUserIdOrderByCreatedAtDesc(id).stream().map(this::toResponse).toList();
+        return routeHistoryRepository.findByUserIdAndDeletedFalseOrderByCreatedAtDesc(id).stream().map(this::toResponse).toList();
     }
 
     @Transactional
@@ -52,7 +52,7 @@ public class RouteHistoryService {
 
     @Transactional(readOnly = true)
     public List<RouteHistoryItemResponse> getUserHistoryByAdmin(Long userId) {
-        return routeHistoryRepository.findByUserIdOrderByCreatedAtDesc(userId).stream().map(this::toResponse).toList();
+        return routeHistoryRepository.findByUserIdAndDeletedFalseOrderByCreatedAtDesc(userId).stream().map(this::toResponse).toList();
     }
 
     public void delete(Long id, String userId) {
@@ -60,7 +60,11 @@ public class RouteHistoryService {
         if (id == null || parsedId == null) {
             return;
         }
-        routeHistoryRepository.findByIdAndUserId(id, parsedId).ifPresent(routeHistoryRepository::delete);
+        routeHistoryRepository.findByIdAndUserIdAndDeletedFalse(id, parsedId).ifPresent(history -> {
+            history.setDeleted(true);
+            history.setDeletedAt(java.time.Instant.now());
+            routeHistoryRepository.save(history);
+        });
     }
 
     public void clear(String userId) {
@@ -68,12 +72,22 @@ public class RouteHistoryService {
         if (parsedId == null) {
             return;
         }
-        routeHistoryRepository.findByUserIdOrderByCreatedAtDesc(parsedId).forEach(routeHistoryRepository::delete);
+        routeHistoryRepository.findByUserIdAndDeletedFalseOrderByCreatedAtDesc(parsedId).forEach(history -> {
+            history.setDeleted(true);
+            history.setDeletedAt(java.time.Instant.now());
+            routeHistoryRepository.save(history);
+        });
     }
 
     @Transactional
     public void deleteById(Long id) {
-        routeHistoryRepository.deleteById(id);
+        routeHistoryRepository.findById(id).ifPresent(history -> {
+            if (!history.isDeleted()) {
+                history.setDeleted(true);
+                history.setDeletedAt(java.time.Instant.now());
+                routeHistoryRepository.save(history);
+            }
+        });
     }
 
     private Long parseUserId(String userId) {

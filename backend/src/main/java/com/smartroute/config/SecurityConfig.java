@@ -35,17 +35,18 @@ public class SecurityConfig {
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(
-                    "/api/auth/signup",
-                    "/api/auth/login",
-                    "/api/auth/forgot-password",
-                    "/api/auth/reset-password",
-                    "/api/auth/validate",
-                    "/auth/**",
-                    "/oauth2/**",
-                    "/traffic/**",
-                    "/swagger-ui/**",
-                    "/v3/api-docs/**",
-                    "/swagger-ui.html"
+                     "/api/auth/signup",
+    "/api/auth/login",
+    "/api/auth/forgot-password",
+    "/api/auth/reset-password",
+    "/api/auth/validate",
+    "/auth/**",
+    "/oauth2/**",
+    "/login/**",   // ✅ added
+    "/traffic/**",
+    "/swagger-ui/**",
+    "/v3/api-docs/**",
+    "/swagger-ui.html"
                 ).permitAll()
                 .requestMatchers("/api/admin/**", "/admin/**").hasRole("ADMIN")
                 .anyRequest().authenticated()

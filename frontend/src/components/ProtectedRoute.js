@@ -6,7 +6,7 @@ export default function ProtectedRoute({ children, role }) {
   const { token, user, loadingUser } = useContext(AuthContext);
 
   if (loadingUser) return <p>Loading...</p>;
-  if (!token) return <Navigate to="/" replace />;
+  if (!token || !user) return <Navigate to="/" replace />;
   if (role && user?.role !== role) return <Navigate to="/dashboard" replace />;
 
   return children;

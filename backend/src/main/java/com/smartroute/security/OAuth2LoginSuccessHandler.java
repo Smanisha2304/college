@@ -22,7 +22,7 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 
     public OAuth2LoginSuccessHandler(
             AuthService authService,
-            @Value("${smartroute.frontend.oauthSuccessUrl:http://localhost:3000/#/oauth-success}") String frontendOAuthSuccessUrl
+            @Value("${smartroute.frontend.oauthSuccessUrl:http://localhost:3000/oauth-success}") String frontendOAuthSuccessUrl
     ) {
         this.authService = authService;
         this.frontendOAuthSuccessUrl = frontendOAuthSuccessUrl;
@@ -38,8 +38,14 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 
         String email = oauthUser.getAttribute("email");
         String name = oauthUser.getAttribute("name");
+        Boolean emailVerified = oauthUser.getAttribute("email_verified");
+
         if (email == null || email.isBlank()) {
             response.sendRedirect(frontendOAuthSuccessUrl + "?error=email_not_found");
+            return;
+        }
+        if (emailVerified != null && !emailVerified) {
+            response.sendRedirect(frontendOAuthSuccessUrl + "?error=email_not_verified");
             return;
         }
 

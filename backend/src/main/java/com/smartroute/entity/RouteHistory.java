@@ -36,6 +36,12 @@ public class RouteHistory {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
 
+    @Column(nullable = false)
+    private boolean deleted = false;
+
+    @Column(name = "deleted_at")
+    private Instant deletedAt;
+
     public Long getId() {
         return id;
     }
@@ -66,5 +72,21 @@ public class RouteHistory {
 
     public Instant getCreatedAt() {
         return createdAt;
+    }
+
+    public boolean isDeleted() {
+        return deleted;
+    }
+
+    public void setDeleted(boolean deleted) {
+        this.deleted = deleted;
+    }
+
+    public Instant getDeletedAt() {
+        return deletedAt;
+    }
+
+    public void setDeletedAt(Instant deletedAt) {
+        this.deletedAt = deletedAt;
     }
 }

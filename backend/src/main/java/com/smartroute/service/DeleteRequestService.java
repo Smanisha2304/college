@@ -36,7 +36,7 @@ public class DeleteRequestService {
     @Transactional
     public DeleteRequestResponse create(Long userId, Long historyId) {
         User user = userRepository.findById(userId).orElseThrow(() -> new IllegalArgumentException("User not found."));
-        RouteHistory history = routeHistoryRepository.findByIdAndUserId(historyId, userId)
+        RouteHistory history = routeHistoryRepository.findByIdAndUserIdAndDeletedFalse(historyId, userId)
                 .orElseThrow(() -> new IllegalArgumentException("History entry not found."));
 
         deleteRequestRepository.findByHistory_IdAndStatus(historyId, DeleteRequestStatus.PENDING)
