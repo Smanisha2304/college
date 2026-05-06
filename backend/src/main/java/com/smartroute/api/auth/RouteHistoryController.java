@@ -1,10 +1,7 @@
 package com.smartroute.api.auth;
 
-import com.smartroute.api.auth.dto.DeleteRequestCreateRequest;
 import com.smartroute.api.auth.dto.RouteHistoryRequest;
-import com.smartroute.service.DeleteRequestService;
 import com.smartroute.service.RouteHistoryService;
-import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -12,11 +9,9 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 public class RouteHistoryController {
     private final RouteHistoryService routeHistoryService;
-    private final DeleteRequestService deleteRequestService;
 
-    public RouteHistoryController(RouteHistoryService routeHistoryService, DeleteRequestService deleteRequestService) {
+    public RouteHistoryController(RouteHistoryService routeHistoryService) {
         this.routeHistoryService = routeHistoryService;
-        this.deleteRequestService = deleteRequestService;
     }
 
     @GetMapping({"/api/user/history", "/user/history", "/api/route-history"})
@@ -36,15 +31,6 @@ public class RouteHistoryController {
         }
         String userId = authentication.getName();
         return ResponseEntity.ok(routeHistoryService.save(req, userId));
-    }
-
-    @PostMapping({"/api/history/delete-request", "/history/delete-request"})
-    public ResponseEntity<?> requestDelete(@Valid @RequestBody DeleteRequestCreateRequest req, Authentication authentication) {
-        if (authentication == null || authentication.getName() == null) {
-            return ResponseEntity.status(401).body("Unauthorized");
-        }
-        Long userId = Long.parseLong(authentication.getName());
-        return ResponseEntity.ok(deleteRequestService.create(userId, req.getHistoryId()));
     }
 
     @DeleteMapping("/api/route-history/{id}")

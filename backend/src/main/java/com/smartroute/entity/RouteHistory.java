@@ -30,8 +30,14 @@ public class RouteHistory {
     @Column(nullable = false, length = 255)
     private String destination;
 
+    @Column(nullable = false, length = 255)
+    private String source;
+
     @Column(name = "source_label", nullable = false, length = 255)
     private String sourceLabel = "";
+
+    @Column(name = "route_json", columnDefinition = "TEXT")
+    private String routeJson;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
@@ -62,12 +68,28 @@ public class RouteHistory {
         this.destination = destination;
     }
 
+    public String getSource() {
+        return source;
+    }
+
+    public void setSource(String source) {
+        this.source = source;
+    }
+
     public String getSourceLabel() {
         return sourceLabel;
     }
 
     public void setSourceLabel(String sourceLabel) {
         this.sourceLabel = sourceLabel;
+    }
+
+    public String getRouteJson() {
+        return routeJson;
+    }
+
+    public void setRouteJson(String routeJson) {
+        this.routeJson = routeJson;
     }
 
     public Instant getCreatedAt() {

@@ -6,6 +6,8 @@ import com.smartroute.entity.RouteHistory;
 import com.smartroute.entity.User;
 import com.smartroute.repository.RouteHistoryRepository;
 import com.smartroute.repository.UserRepository;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,10 +19,12 @@ public class RouteHistoryService {
 
     private final RouteHistoryRepository routeHistoryRepository;
     private final UserRepository userRepository;
+    private final ObjectMapper objectMapper;
 
-    public RouteHistoryService(RouteHistoryRepository routeHistoryRepository, UserRepository userRepository) {
+    public RouteHistoryService(RouteHistoryRepository routeHistoryRepository, UserRepository userRepository, ObjectMapper objectMapper) {
         this.routeHistoryRepository = routeHistoryRepository;
         this.userRepository = userRepository;
+        this.objectMapper = objectMapper;
     }
 
     @Transactional(readOnly = true)
@@ -46,7 +50,9 @@ public class RouteHistoryService {
         RouteHistory history = new RouteHistory();
         history.setUser(user);
         history.setDestination(destination.trim());
+        history.setSource(req.getSource() == null ? "" : req.getSource().trim());
         history.setSourceLabel(req.getSourceLabel() == null ? "" : req.getSourceLabel().trim());
+        history.setRouteJson(toRouteJson(req));
         return toResponse(routeHistoryRepository.save(history));
     }
 
@@ -101,9 +107,20 @@ public class RouteHistoryService {
     private RouteHistoryItemResponse toResponse(RouteHistory history) {
         return new RouteHistoryItemResponse(
                 history.getId(),
+                history.getSource(),
                 history.getDestination(),
                 history.getSourceLabel(),
+                history.getRouteJson(),
                 history.getCreatedAt()
         );
+    }
+
+    private String toRouteJson(RouteHistoryRequest req) {
+        if (req == null || req.getRouteData() == null) return null;
+        try {
+            return objectMapper.writeValueAsString(req.getRouteData());
+        } catch (JsonProcessingException e) {
+            return null;
+        }
     }
 }

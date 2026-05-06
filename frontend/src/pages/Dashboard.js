@@ -4,12 +4,7 @@ import { AuthContext } from "../context/AuthContext";
 import RouteCard from "../components/RouteCard";
 import RouteHistoryPanel from "../components/RouteHistoryPanel";
 import mapBanner from "../assets/map-banner.svg";
-import {
-  fetchHistoryFromApi,
-  loadLocalHistory,
-  mergeHistory,
-  saveLocalHistoryEntry,
-} from "../utils/routeHistory";
+import { fetchHistoryFromApi } from "../utils/routeHistory";
 import { getStepPresentation } from "../utils/navigationInstruction";
 import RouteMapView from "../components/RouteMapView";
 
@@ -32,7 +27,6 @@ export default function Dashboard() {
 
   const mapSectionRef = useRef(null);
   const { token, user, logout } = useContext(AuthContext);
-  const userHistoryKey = user?.id || user?.email || "guest";
   const [hasHistoryLoaded, setHasHistoryLoaded] = useState(false);
 
   const refreshHistory = useCallback(async () => {
@@ -40,24 +34,26 @@ export default function Dashboard() {
     setHistoryError("");
     try {
       const remote = await fetchHistoryFromApi(axios);
-      const local = loadLocalHistory(userHistoryKey);
-      setHistoryItems(mergeHistory(remote, local));
+      setHistoryItems(remote);
       setHasHistoryLoaded(true);
     } catch (err) {
       console.error("History merge failed:", err);
       setHistoryError("Could not refresh history.");
-      setHistoryItems(mergeHistory([], loadLocalHistory(userHistoryKey)));
+      setHistoryItems([]);
       setHasHistoryLoaded(true);
     } finally {
       setHistoryLoading(false);
     }
-  }, [userHistoryKey]);
+  }, []);
 
   useEffect(() => {
     setHistoryItems([]);
     setHistoryError("");
     setHasHistoryLoaded(false);
-  }, [userHistoryKey]);
+    if (user?.id && token) {
+      refreshHistory();
+    }
+  }, [user?.id, token, refreshHistory]);
 
   useEffect(() => {
     navigator.geolocation.getCurrentPosition(
@@ -174,14 +170,18 @@ export default function Dashboard() {
           setShowNavigationSteps(false);
           setVisibleStepCount(5);
 
-          if (res.data?.recommendation && destination.trim()) {
-            saveLocalHistoryEntry({
-              destination: destination.trim(),
-              sourceLabel: res.data.sourceSquareName || sourceLabel || source,
-            }, userHistoryKey);
-            if (hasHistoryLoaded) {
-              await refreshHistory();
-            }
+          if (destination.trim()) {
+            const sourceResolved = res.data.sourceSquareName || source;
+            await axios.post(
+              "/api/user/history",
+              {
+                destination: destination.trim(),
+                source,
+                sourceLabel: sourceResolved,
+                routeData: res.data,
+              }
+            );
+            await refreshHistory();
           }
         } catch (err) {
           console.error("Failed to analyze route:", err);
@@ -206,19 +206,6 @@ export default function Dashboard() {
   const handleHistoryPick = (text) => {
     setDestination(text);
     setIsSuggestionOpen(false);
-  };
-
-  const handleRequestDelete = async (historyId) => {
-    if (!historyId) {
-      setHistoryError("This entry is local-only. Generate the route again so it is saved on the server, then request delete.");
-      return;
-    }
-    try {
-      await axios.post("/api/history/delete-request", { historyId });
-      await refreshHistory();
-    } catch (err) {
-      setHistoryError(err.response?.data?.message || "Could not create delete request.");
-    }
   };
 
   const canShowMap =
@@ -308,7 +295,6 @@ export default function Dashboard() {
             hasLoaded={hasHistoryLoaded}
             onRefresh={refreshHistory}
             onPick={handleHistoryPick}
-            onRequestDelete={handleRequestDelete}
           />
         </div>
       </div>

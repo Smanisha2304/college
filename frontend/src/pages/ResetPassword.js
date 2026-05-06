@@ -1,10 +1,10 @@
-import { useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useMemo, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import axios from "../api/axios";
 
 export default function ResetPassword() {
-  const [searchParams] = useSearchParams();
-  const token = searchParams.get("token");
+  const location = useLocation();
+  const token = useMemo(() => getTokenFromLocation(location), [location]);
   const navigate = useNavigate();
 
   const [password, setPassword] = useState("");
@@ -15,6 +15,11 @@ export default function ResetPassword() {
     setError("");
     setMessage("");
 
+    if (!token) {
+      setError("Reset token is missing or invalid. Please request a new reset link.");
+      return;
+    }
+
     try {
       const res = await axios.post("/api/auth/reset-password", {
         token,
@@ -23,7 +28,7 @@ export default function ResetPassword() {
 
       setMessage(res.data.message || "Password reset successful");
 
-      setTimeout(() => navigate("/login"), 1500);
+      setTimeout(() => navigate("/", { replace: true }), 1500);
     } catch (err) {
       setError(err.response?.data?.message || "Failed to reset password");
     }
@@ -57,4 +62,16 @@ export default function ResetPassword() {
   </div>
 </div>
   );
+}
+
+function getTokenFromLocation(location) {
+  // HashRouter URLs look like:
+  // http://localhost:3000/#/reset-password?token=...
+  const direct = new URLSearchParams(location.search).get("token");
+  if (direct) return direct;
+  const hash = typeof location.hash === "string" ? location.hash : "";
+  const queryIndex = hash.indexOf("?");
+  if (queryIndex === -1) return null;
+  const query = hash.slice(queryIndex + 1);
+  return new URLSearchParams(query).get("token");
 }

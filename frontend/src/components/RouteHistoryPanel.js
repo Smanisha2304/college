@@ -1,4 +1,4 @@
-export default function RouteHistoryPanel({ items, loading, error, hasLoaded, onRefresh, onPick, onRequestDelete }) {
+export default function RouteHistoryPanel({ items, loading, error, hasLoaded, onRefresh, onPick }) {
   return (
     <aside className="route-history-panel" aria-label="Recent searches">
       <div className="route-history-header">
@@ -34,15 +34,6 @@ export default function RouteHistoryPanel({ items, loading, error, hasLoaded, on
                 <span className="route-history-time muted">
                   {new Date(row.createdAt).toLocaleString()}
                 </span>
-              </button>
-              <button
-                type="button"
-                className="route-history-delete-btn"
-                onClick={() => onRequestDelete(row.historyId)}
-                disabled={!row.historyId}
-                title={!row.historyId ? "Only server-saved history can be requested for delete. Click Get Route to save it." : ""}
-              >
-                Request Delete
               </button>
             </div>
           </li>

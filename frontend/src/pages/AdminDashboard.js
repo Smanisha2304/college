@@ -9,19 +9,14 @@ export default function AdminDashboard() {
   const [users, setUsers] = useState([]);
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [userHistory, setUserHistory] = useState([]);
-  const [deleteRequests, setDeleteRequests] = useState([]);
   const [error, setError] = useState("");
   const [loadingHistory, setLoadingHistory] = useState(false);
 
   const loadAdminData = async () => {
     setError("");
     try {
-      const [usersRes, deleteRes] = await Promise.all([
-        axios.get("/api/admin/users"),
-        axios.get("/api/admin/delete-requests"),
-      ]);
+      const usersRes = await axios.get("/api/admin/users");
       setUsers(usersRes.data || []);
-      setDeleteRequests(deleteRes.data || []);
     } catch (err) {
       setError(err.response?.data?.message || "Failed to load admin data");
     }
@@ -31,25 +26,13 @@ export default function AdminDashboard() {
     setSelectedUserId(userId);
     setLoadingHistory(true);
     try {
-      const res = await axios.get(`/api/admin/history/${userId}`);
+      const res = await axios.get(`/admin/user/${userId}/history`);
       setUserHistory(res.data || []);
     } catch (err) {
       setError(err.response?.data?.message || "Failed to load user history");
       setUserHistory([]);
     } finally {
       setLoadingHistory(false);
-    }
-  };
-
-  const actionDeleteRequest = async (id, action) => {
-    try {
-      await axios.post(`/api/admin/delete-requests/${id}/${action}`);
-      await loadAdminData();
-      if (selectedUserId) {
-        await loadHistory(selectedUserId);
-      }
-    } catch (err) {
-      setError(err.response?.data?.message || `Failed to ${action} request`);
     }
   };
 
@@ -104,41 +87,47 @@ export default function AdminDashboard() {
         {(userHistory || []).map((h) => (
           <div key={h.id} className="admin-row">
             <div className="admin-block">
-              <span>{h.destination}</span>
-              <div className="admin-meta">
-                {h.sourceLabel ? `From ${h.sourceLabel} • ` : ""}
-                History ID: {h.id} • {new Date(h.createdAt).toLocaleString()}
-              </div>
-            </div>
-          </div>
-        ))}
-      </section>
-
-      <section className="route-card">
-        <h3>Delete Requests</h3>
-        {(deleteRequests || []).map((req) => (
-          <div key={req.id} className="admin-row">
-            <div className="admin-block">
               <span>
-                Request #{req.id} • {req.status}
+                {h.destination}{" "}
+                {getRouteSummary(h.routeJson) ? (
+                  <span className="admin-meta">• {getRouteSummary(h.routeJson)}</span>
+                ) : null}
               </span>
               <div className="admin-meta">
-                User: {req.userEmail || req.userId} • History ID: {req.historyId} • Destination: {req.destination}
-              </div>
-              <div className="admin-meta">
-                Requested: {req.requestedAt ? new Date(req.requestedAt).toLocaleString() : "-"}
-                {req.actionedAt ? ` • Actioned: ${new Date(req.actionedAt).toLocaleString()}` : ""}
+                {h.sourceLabel ? `From ${h.sourceLabel} • ` : ""}
+                Source: {h.source || "-"} • {new Date(h.createdAt).toLocaleString()}
               </div>
             </div>
-            {req.status === "PENDING" && (
-              <div className="admin-actions">
-                <button type="button" onClick={() => actionDeleteRequest(req.id, "approve")}>Approve</button>
-                <button type="button" onClick={() => actionDeleteRequest(req.id, "reject")}>Reject</button>
-              </div>
-            )}
+            {h.routeJson ? (
+              <details className="admin-route-details">
+                <summary>Route JSON</summary>
+                <pre>{prettyJson(h.routeJson)}</pre>
+              </details>
+            ) : null}
           </div>
         ))}
       </section>
     </div>
   );
+}
+
+function getRouteSummary(routeJson) {
+  if (!routeJson) return "";
+  try {
+    const obj = typeof routeJson === "string" ? JSON.parse(routeJson) : routeJson;
+    const rec = obj?.recommendation;
+    if (!rec) return "";
+    return rec.name || rec.id || "";
+  } catch {
+    return "";
+  }
+}
+
+function prettyJson(routeJson) {
+  try {
+    const obj = typeof routeJson === "string" ? JSON.parse(routeJson) : routeJson;
+    return JSON.stringify(obj, null, 2);
+  } catch {
+    return String(routeJson);
+  }
 }

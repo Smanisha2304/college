@@ -57,7 +57,7 @@ export default function ForgotPassword() {
     {error && <p className="error">{error}</p>}
 
     <p className="link-text">
-      <Link to="/login">Back to Login</Link>
+      <Link to="/">Back to Login</Link>
     </p>
 
   </div>
