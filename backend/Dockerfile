@@ -10,4 +10,4 @@ RUN mvn clean package -DskipTests
 
 EXPOSE 8080
 
-CMD ["java", "-jar", "target/smartroute-backend-0.1.0.jar"]
+CMD ["sh", "-c", "java -jar target/*.jar"]
