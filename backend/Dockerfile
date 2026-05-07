@@ -5,6 +5,9 @@ WORKDIR /app
 COPY . .
 
 RUN chmod +x mvnw
+
 RUN ./mvnw clean package -DskipTests
 
-CMD ["java","-jar","target/*.jar"]
+EXPOSE 8080
+
+CMD ["java", "-jar", "target/smartroute-backend-0.0.1-SNAPSHOT.jar"]
