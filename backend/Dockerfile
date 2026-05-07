@@ -4,10 +4,10 @@ WORKDIR /app
 
 COPY . .
 
-RUN chmod +x mvnw
+RUN apt-get update && apt-get install -y maven
 
-RUN ./mvnw clean package -DskipTests
+RUN mvn clean package -DskipTests
 
 EXPOSE 8080
 
-CMD ["sh", "-c", "java -jar target/*.jar"]
+CMD ["java", "-jar", "target/smartroute-backend-0.1.0.jar"]
